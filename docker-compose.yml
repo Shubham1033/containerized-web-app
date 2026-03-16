@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  database:
+    build:
+      context: ./database
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      macvlan_net:
+        ipv4_address: 192.168.10.200
+
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "3000:3000" # Exposes to your Windows localhost for easy testing
+    environment:
+      - DB_HOST=192.168.10.200
+      - DB_PORT=5432
+      - DB_USER=appuser
+      - DB_PASSWORD=apppassword
+      - DB_NAME=appdb
+    networks:
+      macvlan_net:
+        ipv4_address: 192.168.10.201
+    depends_on:
+      - database
+
+volumes:
+  pgdata: # Named volume for persistence
+
+networks:
+  macvlan_net:
+    name: custom_macvlan
+    driver: macvlan
+    driver_opts:
+      parent: eth0
+    ipam:
+      config:
+        - subnet: 192.168.10.0/24
+          gateway: 192.168.10.1
